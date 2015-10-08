@@ -210,55 +210,53 @@ class EMUiAdok:
             data = (varObreb, varNumer, varArkusz)
             
             #nazwa ulicy
-            query = "select nazwaglown from punkty_adresowe where obreb = %s AND numer = %s AND arkusz= %s;"
-            cur.execute(query, data)
+            querys1 = "select nazwaglown from punkty_adresowe where obreb = %s AND numer = %s AND arkusz= %s;"
+            cur.execute(querys1, data)
             con.commit()
             ulicaPA = cur.fetchone()[0]
-            print ulicaPA
 
             #nazwa ulicy
-            dataUpdate = (ulicaPA, varObreb, varNumer, varArkusz)
-            query = "update emuia set nazwaglown = %s where rejon = %s AND numdzialki = %s AND arkusz= %s;"
-            cur.execute(query, dataUpdate)
+            dataUpdate1 = (ulicaPA, varObreb, varNumer, varArkusz)
+            query1 = "update rejestr_emuia set nazwaglown = %s where rejon = %s AND numdzialki = %s AND arkusz= %s;"
+            cur.execute(query1, dataUpdate1)
             con.commit()
 
             #TERYT ulicy
-            query = "select ulica_ad_n from punkty_adresowe where obreb = %s AND numer = %s AND arkusz= %s;"
-            cur.execute(query, data)
+            querys2 = "select ulica_ad_n from punkty_adresowe where obreb = %s AND numer = %s AND arkusz= %s;"
+            cur.execute(querys2, data)
             con.commit()
             ulicaPAteryt = cur.fetchone()[0]
             ulicaPAteryt = str(ulicaPAteryt)
 
             #idTERYT ulicy
-            dataUpdate = (ulicaPAteryt, varObreb, varNumer, varArkusz)
-            query = "update emuia set ulica_ad_n = %s where rejon = %s AND numdzialki = %s AND arkusz= %s;"
-            cur.execute(query, dataUpdate)
+            dataUpdate2 = (ulicaPAteryt, varObreb, varNumer, varArkusz)
+            query2 = "update rejestr_emuia set ulica_ad_n = %s where rejon = %s AND numdzialki = %s AND arkusz= %s;"
+            cur.execute(query2, dataUpdate2)
             con.commit()
 
             #numer porządkowy budynku
-            query = "select numerporza from punkty_adresowe where obreb = %s AND numer = %s AND arkusz= %s;"
-            cur.execute(query, data)
+            querys3 = "select numerporza from punkty_adresowe where obreb = %s AND numer = %s AND arkusz= %s;"
+            cur.execute(querys3, data)
             con.commit()
             nrPorza = cur.fetchone()[0]
 
             #numer porządkowy budynku
-            dataUpdate = (nrPorza, varObreb, varNumer, varArkusz)
-            query = "update emuia set numerporza = %s where rejon = %s AND numdzialki = %s AND arkusz= %s;"
-            cur.execute(query, dataUpdate)
+            dataUpdate3 = (nrPorza, varObreb, varNumer, varArkusz)
+            query3 = "update rejestr_emuia set numerporza = %s where rejon = %s AND numdzialki = %s AND arkusz= %s;"
+            cur.execute(query3, dataUpdate3)
             con.commit()
 
             #kod pocztowy
-            query = "select kodpocztow from punkty_adresowe where obreb = %s AND numer = %s AND arkusz= %s;"
-            cur.execute(query, data)
+            querys4 = "select kodpocztow from punkty_adresowe where obreb = %s AND numer = %s AND arkusz= %s;"
+            cur.execute(querys4, data)
             con.commit()
             kodPoczt = cur.fetchone()[0]
-            print kodPoczt
 
             #update pustych atrybutów dla wybranych wierszy
             #kod pocztowy
-            dataUpdate = (kodPoczt, varObreb, varNumer, varArkusz)
-            query = "update emuia set kodpocztow = %s where rejon = %s AND numdzialki = %s AND arkusz= %s;"
-            cur.execute(query, dataUpdate)
+            dataUpdate4 = (kodPoczt, varObreb, varNumer, varArkusz)
+            query4 = "update rejestr_emuia set kodpocztow = %s where rejon = %s AND numdzialki = %s AND arkusz= %s;"
+            cur.execute(query4, dataUpdate4)
             con.commit()
             
             
@@ -276,7 +274,7 @@ class EMUiAdok:
             
             if con:
                 con.close()
-                
+                iface.messageBar().pushMessage('Sukces', u'Dane zostały odszukane', level=QgsMessageBar.SUCCESS, duration=5)
             else:
                 iface.messageBar().pushMessage(u'Błąd', u'Dane nie zostały zapisane', level=QgsMessageBar.CRITICAL, duration=5)
         
@@ -291,6 +289,7 @@ class EMUiAdok:
         ids = [i.id() for i in it]
         warstwa.setSelectedFeatures( ids )
         self.idAtlas = int(ids[0])
+        self.idAtlas = self.idAtlas - 1
         
         
         #zoom do wybranej działki
@@ -310,6 +309,7 @@ class EMUiAdok:
         ids = [i.id() for i in it]
         alayer.setSelectedFeatures( ids )
         self.idAtlas = int(ids[0])
+        self.idAtlas = self.idAtlas - 1
         # Dodaje wszystkie warstwy do widoku mapy
         myMapRenderer = self.iface.mapCanvas().mapRenderer()
 
@@ -320,11 +320,9 @@ class EMUiAdok:
         templateDir = r'C:\Users'
         endDir = '\Desktop\KnurowEMUiA\pliki\szablony druku'
         template = '\zaswiadczenie.qpt'
-        #templateSuffix = '.qpt'
         
         myFile = os.path.join(templateDir, username + endDir + template)
 
-        #myFile = r'C:\Users\haku\Desktop\Opole\Knurow\druk\zaswiadczenie.qpt'
         myTemplateFile = file(myFile, 'rt')
         myTemplateContent = myTemplateFile.read()
         myTemplateFile.close()
@@ -344,7 +342,6 @@ class EMUiAdok:
         myAtlas.setCoverageLayer(alayer)
         myAtlas.setHideCoverage(False)
         myAtlas.setSingleFile(True)
-        myAtlas.setHideCoverage(False)
         
         myAtlasMap.setAtlasDriven(True)#mapa kontrolowana przez atlas
         myAtlasMap.setAtlasScalingMode(QgsComposerMap.Auto)# jaka skala kontrolowana przez atlas (margin)
@@ -357,7 +354,7 @@ class EMUiAdok:
         myAtlas.prepareForFeature(self.idAtlas)
         saveDirEnd = '\Desktop\KnurowEMUiA\wydruki\zaswiadczenie'
         outputDir = os.path.join(templateDir, username + saveDirEnd)
-        output_pdf = outputDir + "zaswiadczenie_nr_" + str(self.idAtlas)+ ".pdf"
+        output_pdf = outputDir + "\zaswiadczenie_nr_" + str(self.idAtlas)+ ".pdf"
         try:
             myComposition.exportAsPDF(output_pdf)
             myAtlas.endRender()
@@ -377,6 +374,7 @@ class EMUiAdok:
         ids = [i.id() for i in it]
         alayer.setSelectedFeatures( ids )
         self.idAtlas = int(ids[0])
+        self.idAtlas = self.idAtlas - 1
         
         # Dodaje wszystkie warstwy do widoku mapy
         myMapRenderer = self.iface.mapCanvas().mapRenderer()
@@ -388,11 +386,9 @@ class EMUiAdok:
         templateDir = r'C:\Users'
         endDir = '\Desktop\KnurowEMUiA\pliki\szablony druku'
         template = '\zawiadomienie_o_ust.qpt'
-        #templateSuffix = '.qpt'
         
         myFile = os.path.join(templateDir, username + endDir + template)
 
-        #myFile = r'C:\Users\haku\Desktop\Opole\Knurow\druk\zaswiadczenie.qpt'
         myTemplateFile = file(myFile, 'rt')
         myTemplateContent = myTemplateFile.read()
         myTemplateFile.close()
@@ -412,7 +408,6 @@ class EMUiAdok:
         myAtlas.setCoverageLayer(alayer)
         myAtlas.setHideCoverage(False)
         myAtlas.setSingleFile(True)
-        myAtlas.setHideCoverage(False)
         
         myAtlasMap.setAtlasDriven(True)#mapa kontrolowana przez atlas
         myAtlasMap.setAtlasScalingMode(QgsComposerMap.Auto)# jaka skala kontrolowana przez atlas (margin)
@@ -425,13 +420,13 @@ class EMUiAdok:
         myAtlas.prepareForFeature(self.idAtlas)
         saveDirEnd = '\Desktop\KnurowEMUiA\wydruki\zawiadomienie_o_ustaleniu_nr'
         outputDir = os.path.join(templateDir, username + saveDirEnd)
-        output_pdf = outputDir + "zaswiadczenie_nr_" + str(self.idAtlas)+ ".pdf"
+        output_pdf = outputDir + "\zawiadomienieUstal_nr_" + str(self.idAtlas)+ ".pdf"
         try:
             myComposition.exportAsPDF(output_pdf)
             myAtlas.endRender()
-            self.iface.messageBar().pushMessage('Sukces', u'Zaświadczenie zostało wygenerowane pomyślnie', level=QgsMessageBar.SUCCESS, duration=5)
+            self.iface.messageBar().pushMessage('Sukces', u'Zawiadomienie o ustaleniu numeru zostało wygenerowane pomyślnie', level=QgsMessageBar.SUCCESS, duration=5)
         except:
-            self.iface.messageBar().pushMessage(u'Błąd', u'Generowanie Zaświadczenia nie powiodło sie', level=QgsMessageBar.CRITICAL, duration=5)
+            self.iface.messageBar().pushMessage(u'Błąd', u'Generowanie zawiadomienia nie powiodło sie', level=QgsMessageBar.CRITICAL, duration=5)
             
     def printZawiadomienieZmiana(self):
         alayer = self.iface.activeLayer()
@@ -445,6 +440,7 @@ class EMUiAdok:
         ids = [i.id() for i in it]
         alayer.setSelectedFeatures( ids )
         self.idAtlas = int(ids[0])
+        self.idAtlas = self.idAtlas - 1
         
         # Dodaje wszystkie warstwy do widoku mapy
         myMapRenderer = self.iface.mapCanvas().mapRenderer()
@@ -456,11 +452,9 @@ class EMUiAdok:
         templateDir = r'C:\Users'
         endDir = '\Desktop\KnurowEMUiA\pliki\szablony druku'
         template = '\zawiadomienie_o_zm_nr.qpt'
-        #templateSuffix = '.qpt'
         
         myFile = os.path.join(templateDir, username + endDir + template)
 
-        #myFile = r'C:\Users\haku\Desktop\Opole\Knurow\druk\zaswiadczenie.qpt'
         myTemplateFile = file(myFile, 'rt')
         myTemplateContent = myTemplateFile.read()
         myTemplateFile.close()
@@ -480,7 +474,6 @@ class EMUiAdok:
         myAtlas.setCoverageLayer(alayer)
         myAtlas.setHideCoverage(False)
         myAtlas.setSingleFile(True)
-        myAtlas.setHideCoverage(False)
         
         myAtlasMap.setAtlasDriven(True)#mapa kontrolowana przez atlas
         myAtlasMap.setAtlasScalingMode(QgsComposerMap.Auto)# jaka skala kontrolowana przez atlas (margin)
@@ -493,13 +486,13 @@ class EMUiAdok:
         myAtlas.prepareForFeature(self.idAtlas)
         saveDirEnd = '\Desktop\KnurowEMUiA\wydruki\zawiadomienie_o_zmianie_nr'
         outputDir = os.path.join(templateDir, username + saveDirEnd)
-        output_pdf = outputDir + "zaswiadczenie_nr_" + str(self.idAtlas)+ ".pdf"
+        output_pdf = outputDir + "\zaswiadczenieZmian_nr_" + str(self.idAtlas)+ ".pdf"
         try:
             myComposition.exportAsPDF(output_pdf)
             myAtlas.endRender()
-            self.iface.messageBar().pushMessage('Sukces', u'Zaświadczenie zostało wygenerowane pomyślnie', level=QgsMessageBar.SUCCESS, duration=5)
+            self.iface.messageBar().pushMessage('Sukces', u'Zawiadomienie o zmianie numeru zostało wygenerowane pomyślnie', level=QgsMessageBar.SUCCESS, duration=5)
         except:
-            self.iface.messageBar().pushMessage(u'Błąd', u'Generowanie Zaświadczenia nie powiodło sie', level=QgsMessageBar.CRITICAL, duration=5)
+            self.iface.messageBar().pushMessage(u'Błąd', u'Generowanie zawiadomienia nie powiodło sie', level=QgsMessageBar.CRITICAL, duration=5)
 
 
     def run(self):
@@ -509,7 +502,7 @@ class EMUiAdok:
         
         activeLyr=None
         for lyr in QgsMapLayerRegistry.instance().mapLayers().values():
-            if lyr.name() == "emuia":
+            if lyr.name() == "rejestr_emuia":
                 activeLyr = lyr
                 self.iface.setActiveLayer(activeLyr)
                 
