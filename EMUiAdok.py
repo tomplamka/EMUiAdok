@@ -200,102 +200,119 @@ class EMUiAdok:
         varNumer = unicode(self.dlg.dzialkaLineEdit.text())
         varArkusz = unicode(self.dlg.arkuszLineEdit.text())
         
-        con = None
-
-        try:
-             
-            con = psycopg2.connect(database='netgis_knurow', user='netgis_knurow', password='n4feqeTR', host='178.216.202.213')
-            cur = con.cursor()
-            
-            data = (varObreb, varNumer, varArkusz)
-            
-            #nazwa ulicy
-            querys1 = "select nazwaglown from punkty_adresowe where obreb = %s AND numer = %s AND arkusz= %s;"
-            cur.execute(querys1, data)
-            con.commit()
-            ulicaPA = cur.fetchone()[0]
-
-            #nazwa ulicy
-            dataUpdate1 = (ulicaPA, varObreb, varNumer, varArkusz)
-            query1 = "update rejestr_emuia set nazwaglown = %s where rejon = %s AND numdzialki = %s AND arkusz= %s;"
-            cur.execute(query1, dataUpdate1)
-            con.commit()
-
-            #TERYT ulicy
-            querys2 = "select ulica_ad_n from punkty_adresowe where obreb = %s AND numer = %s AND arkusz= %s;"
-            cur.execute(querys2, data)
-            con.commit()
-            ulicaPAteryt = cur.fetchone()[0]
-            ulicaPAteryt = str(ulicaPAteryt)
-
-            #idTERYT ulicy
-            dataUpdate2 = (ulicaPAteryt, varObreb, varNumer, varArkusz)
-            query2 = "update rejestr_emuia set ulica_ad_n = %s where rejon = %s AND numdzialki = %s AND arkusz= %s;"
-            cur.execute(query2, dataUpdate2)
-            con.commit()
-
-            #numer porządkowy budynku
-            querys3 = "select numerporza from punkty_adresowe where obreb = %s AND numer = %s AND arkusz= %s;"
-            cur.execute(querys3, data)
-            con.commit()
-            nrPorza = cur.fetchone()[0]
-
-            #numer porządkowy budynku
-            dataUpdate3 = (nrPorza, varObreb, varNumer, varArkusz)
-            query3 = "update rejestr_emuia set numerporza = %s where rejon = %s AND numdzialki = %s AND arkusz= %s;"
-            cur.execute(query3, dataUpdate3)
-            con.commit()
-
-            #kod pocztowy
-            querys4 = "select kodpocztow from punkty_adresowe where obreb = %s AND numer = %s AND arkusz= %s;"
-            cur.execute(querys4, data)
-            con.commit()
-            kodPoczt = cur.fetchone()[0]
-
-            #update pustych atrybutów dla wybranych wierszy
-            #kod pocztowy
-            dataUpdate4 = (kodPoczt, varObreb, varNumer, varArkusz)
-            query4 = "update rejestr_emuia set kodpocztow = %s where rejon = %s AND numdzialki = %s AND arkusz= %s;"
-            cur.execute(query4, dataUpdate4)
-            con.commit()
-            
-            
-
-
-        except psycopg2.DatabaseError, e:
-            if con:
-                con.rollback()
-
-            iface.messageBar().pushMessage(u'Błąd', u'Problem z połączeniem do bazy', level=QgsMessageBar.CRITICAL, duration=5)
-            sys.exit(1)
-            
-            
-        finally:
-            
-            if con:
-                con.close()
-                iface.messageBar().pushMessage('Sukces', u'Dane zostały odszukane', level=QgsMessageBar.SUCCESS, duration=5)
-            else:
-                iface.messageBar().pushMessage(u'Błąd', u'Dane nie zostały zapisane', level=QgsMessageBar.CRITICAL, duration=5)
+        if varNumer == '':
+            self.iface.messageBar().pushMessage('Puste pole', u'Proszę wypełnić pole numeru działki', level=QgsMessageBar.CRITICAL, duration=10)
+        elif varArkusz == '':
+            self.iface.messageBar().pushMessage('Puste pole', u'Proszę wypełnić pole Arkusza', level=QgsMessageBar.CRITICAL, duration=10)
+        else:
         
         
-        warstwa = self.iface.mapCanvas().currentLayer()
+            con = None
+
+            try:
+                 
+                con = psycopg2.connect(database='netgis_knurow', user='netgis_knurow', password='n4feqeTR', host='178.216.202.213')
+                cur = con.cursor()
+                
+                data = (varObreb, varNumer, varArkusz)
+                q = "select * from punkty_adresowe_knurow_emuia where obreb = %s AND numer = %s AND arkusz= %s;"
+                cur.execute(q, data)
+                con.commit()
+                wynik = cur.fetchall()
+                if wynik == '1':
+                
+                
+                    #nazwa ulicy
+                    querys1 = "select nazwaglown from punkty_adresowe_knurow_emuia where obreb = %s AND numer = %s AND arkusz= %s;"
+                    cur.execute(querys1, data)
+                    con.commit()
+                    ulicaPA = cur.fetchone()[0]
+
+                    #nazwa ulicy
+                    dataUpdate1 = (ulicaPA, varObreb, varNumer, varArkusz)
+                    query1 = "update rejestr_emuia set nazwaglown = %s where rejon = %s AND numdzialki = %s AND arkusz= %s;"
+                    cur.execute(query1, dataUpdate1)
+                    con.commit()
+
+                    #TERYT ulicy
+                    querys2 = "select ulica_ad_n from punkty_adresowe_knurow_emuia where obreb = %s AND numer = %s AND arkusz= %s;"
+                    cur.execute(querys2, data)
+                    con.commit()
+                    ulicaPAteryt = cur.fetchone()[0]
+                    ulicaPAteryt = str(ulicaPAteryt)
+
+                    #idTERYT ulicy
+                    dataUpdate2 = (ulicaPAteryt, varObreb, varNumer, varArkusz)
+                    query2 = "update rejestr_emuia set ulica_ad_n = %s where rejon = %s AND numdzialki = %s AND arkusz= %s;"
+                    cur.execute(query2, dataUpdate2)
+                    con.commit()
+
+                    #numer porządkowy budynku
+                    querys3 = "select numerporza from punkty_adresowe_knurow_emuia where obreb = %s AND numer = %s AND arkusz= %s;"
+                    cur.execute(querys3, data)
+                    con.commit()
+                    nrPorza = cur.fetchone()[0]
+
+                    #numer porządkowy budynku
+                    dataUpdate3 = (nrPorza, varObreb, varNumer, varArkusz)
+                    query3 = "update rejestr_emuia set numerporza = %s where rejon = %s AND numdzialki = %s AND arkusz= %s;"
+                    cur.execute(query3, dataUpdate3)
+                    con.commit()
+
+                    #kod pocztowy
+                    querys4 = "select kodpocztow from punkty_adresowe_knurow_emuia where obreb = %s AND numer = %s AND arkusz= %s;"
+                    cur.execute(querys4, data)
+                    con.commit()
+                    kodPoczt = cur.fetchone()[0]
+
+                    #update pustych atrybutów dla wybranych wierszy
+                    #kod pocztowy
+                    dataUpdate4 = (kodPoczt, varObreb, varNumer, varArkusz)
+                    query4 = "update rejestr_emuia set kodpocztow = %s where rejon = %s AND numdzialki = %s AND arkusz= %s;"
+                    cur.execute(query4, dataUpdate4)
+                    con.commit()
+                    
+                    warstwa = self.iface.mapCanvas().currentLayer()
+            
+
+            
+                    #request = QgsFeatureRequest().setFilterExpression( "\"OBREB\"='" + varObreb + "' OR \"NUMER\"='"+ varNumer + "'  OR \"ARKUSZ\"='"+ varArkusz + "'" )
+                    expr = QgsExpression( "\"rejon\"='" + varObreb + "' AND \"numdzialki\"='"+ varNumer + "'  AND \"arkusz\"='"+ varArkusz + "'" )
+                    it = warstwa.getFeatures( QgsFeatureRequest( expr ) )
+                    ids = [i.id() for i in it]
+                    warstwa.setSelectedFeatures( ids )
+                    self.idAtlas = int(ids[0])
+                    self.idAtlas = self.idAtlas - 1
+                else:
+                    self.iface.messageBar().pushMessage(u'Uwaga', u'Brak działki w o podanej lokalizacji. Proszę sprawdzić poprawnośc danych', level=QgsMessageBar.WARNING, duration=5)
+                
+                
+
+
+            except psycopg2.DatabaseError, e:
+                if con:
+                    con.rollback()
+
+                self.iface.messageBar().pushMessage(u'Błąd', u'Problem z połączeniem do bazy', level=QgsMessageBar.CRITICAL, duration=5)
+                sys.exit(1)
+                
+                
+            finally:
+                
+                if con:
+                    con.close()
+                    #self.iface.messageBar().pushMessage('Sukces', u'Dane zostały odszukane', level=QgsMessageBar.SUCCESS, duration=5)
+                else:
+                    self.iface.messageBar().pushMessage(u'Błąd', u'Dane nie zostały zapisane', level=QgsMessageBar.CRITICAL, duration=5)
+        
         
 
-        
-        #request = QgsFeatureRequest().setFilterExpression( "\"OBREB\"='" + varObreb + "' OR \"NUMER\"='"+ varNumer + "'  OR \"ARKUSZ\"='"+ varArkusz + "'" )
-        expr = QgsExpression( "\"rejon\"='" + varObreb + "' AND \"numdzialki\"='"+ varNumer + "'  AND \"arkusz\"='"+ varArkusz + "'" )
-        it = warstwa.getFeatures( QgsFeatureRequest( expr ) )
-        ids = [i.id() for i in it]
-        warstwa.setSelectedFeatures( ids )
-        self.idAtlas = int(ids[0])
-        self.idAtlas = self.idAtlas - 1
-        
-        
-        #zoom do wybranej działki
-        #box = warstwa.boundingBoxOfSelected()
-        #self.iface.mapCanvas().setExtent(box)
-        #self.iface.mapCanvas().refresh()
+            
+            
+            #zoom do wybranej działki
+            #box = warstwa.boundingBoxOfSelected()
+            #self.iface.mapCanvas().setExtent(box)
+            #self.iface.mapCanvas().refresh()
         
     def printZaswiadczenie(self):
         alayer = self.iface.activeLayer()
