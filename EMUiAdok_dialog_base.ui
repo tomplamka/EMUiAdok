@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>400</width>
-    <height>314</height>
+    <height>306</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -17,7 +17,7 @@
    <property name="geometry">
     <rect>
      <x>40</x>
-     <y>270</y>
+     <y>260</y>
      <width>341</width>
      <height>32</height>
     </rect>
@@ -35,7 +35,7 @@
      <x>10</x>
      <y>10</y>
      <width>371</width>
-     <height>111</height>
+     <height>131</height>
     </rect>
    </property>
    <property name="title">
@@ -46,8 +46,8 @@
      <rect>
       <x>30</x>
       <y>20</y>
-      <width>160</width>
-      <height>81</height>
+      <width>191</width>
+      <height>100</height>
      </rect>
     </property>
     <layout class="QFormLayout" name="formLayout">
@@ -88,12 +88,22 @@
      <item row="2" column="1">
       <widget class="QLineEdit" name="arkuszLineEdit"/>
      </item>
+     <item row="3" column="0">
+      <widget class="QLabel" name="numerBudynkuLabel">
+       <property name="text">
+        <string>Numer budynku</string>
+       </property>
+      </widget>
+     </item>
+     <item row="3" column="1">
+      <widget class="QLineEdit" name="numerBudynkuLineEdit"/>
+     </item>
     </layout>
    </widget>
    <widget class="QPushButton" name="btnSzukaj">
     <property name="geometry">
      <rect>
-      <x>230</x>
+      <x>260</x>
       <y>20</y>
       <width>75</width>
       <height>23</height>
@@ -108,9 +118,9 @@
    <property name="geometry">
     <rect>
      <x>10</x>
-     <y>130</y>
+     <y>150</y>
      <width>371</width>
-     <height>121</height>
+     <height>101</height>
     </rect>
    </property>
    <property name="title">

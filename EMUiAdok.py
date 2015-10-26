@@ -195,10 +195,17 @@ class EMUiAdok:
         # selekcja atrybutów na podstawie zaznaczonych wartości
         #self.iface.mapCanvas().setSelectionColor( QColor("yellow") )
         
+        activeLyr=None
+        for lyr in QgsMapLayerRegistry.instance().mapLayers().values():
+            if lyr.name() == "PunktyAdresowe":
+                activeLyr = lyr
+                self.iface.setActiveLayer(activeLyr)
+        
         #wartości z coboBoxów do zmiennej
         varObreb = unicode(self.dlg.obrebComboBox.currentText())
         varNumer = unicode(self.dlg.dzialkaLineEdit.text())
         varArkusz = unicode(self.dlg.arkuszLineEdit.text())
+        varNumPorza = unicode(self.dlg.numerBudynkuLineEdit.text())
         
         if varNumer == '':
             self.iface.messageBar().pushMessage('Puste pole', u'Proszę wypełnić pole numeru działki', level=QgsMessageBar.CRITICAL, duration=10)
@@ -206,7 +213,23 @@ class EMUiAdok:
             self.iface.messageBar().pushMessage('Puste pole', u'Proszę wypełnić pole Arkusza', level=QgsMessageBar.CRITICAL, duration=10)
         else:
         
-        
+            data1 = (varObreb, varNumer, varArkusz, varNumPorza)
+            data = (varObreb, varNumer, varArkusz)
+
+            warstwa = self.iface.activeLayer()
+            expr = QgsExpression( "\"OBREB\"='" + varObreb + "' AND \"NUMER\"='"+ varNumer + "' AND \"ARKUSZ\"='"+ varArkusz + "' AND \"NUMERPORZA\"='" + varNumPorza + "'" )
+            features = warstwa.getFeatures( QgsFeatureRequest( expr ) ).next()
+            #selected = features.next()
+
+            #selected = [s.id() for s in features]
+            #warstwa.setSelectedFeatures( selected )
+            #iface.mapCanvas().zoomToSelected()
+            
+            ulicaPA = features.attributes()[13]
+            ulicaPAteryt = features.attributes()[14]
+            nrPorza = features.attributes()[15]
+            kodPoczt = features.attributes()[16]
+            
             con = None
 
             try:
@@ -214,77 +237,48 @@ class EMUiAdok:
                 con = psycopg2.connect(database='netgis_knurow', user='netgis_knurow', password='n4feqeTR', host='178.216.202.213')
                 cur = con.cursor()
                 
-                data = (varObreb, varNumer, varArkusz)
-                q = "select * from punkty_adresowe_knurow_emuia where obreb = %s AND numer = %s AND arkusz= %s;"
-                cur.execute(q, data)
+                
+
+                #nazwa ulicy
+                dataUpdate1 = (ulicaPA, varObreb, varNumer, varArkusz)
+                query1 = "update rejestr_emuia set nazwaglown = %s where rejon = %s AND numdzialki = %s AND arkusz= %s;"
+                cur.execute(query1, dataUpdate1)
                 con.commit()
-                wynik = cur.fetchall()
-                if wynik == '1':
-                
-                
-                    #nazwa ulicy
-                    querys1 = "select nazwaglown from punkty_adresowe_knurow_emuia where obreb = %s AND numer = %s AND arkusz= %s;"
-                    cur.execute(querys1, data)
-                    con.commit()
-                    ulicaPA = cur.fetchone()[0]
 
-                    #nazwa ulicy
-                    dataUpdate1 = (ulicaPA, varObreb, varNumer, varArkusz)
-                    query1 = "update rejestr_emuia set nazwaglown = %s where rejon = %s AND numdzialki = %s AND arkusz= %s;"
-                    cur.execute(query1, dataUpdate1)
-                    con.commit()
 
-                    #TERYT ulicy
-                    querys2 = "select ulica_ad_n from punkty_adresowe_knurow_emuia where obreb = %s AND numer = %s AND arkusz= %s;"
-                    cur.execute(querys2, data)
-                    con.commit()
-                    ulicaPAteryt = cur.fetchone()[0]
-                    ulicaPAteryt = str(ulicaPAteryt)
+                #idTERYT ulicy
+                dataUpdate2 = (ulicaPAteryt, varObreb, varNumer, varArkusz)
+                query2 = "update rejestr_emuia set ulica_ad_n = %s where rejon = %s AND numdzialki = %s AND arkusz= %s;"
+                cur.execute(query2, dataUpdate2)
+                con.commit()
 
-                    #idTERYT ulicy
-                    dataUpdate2 = (ulicaPAteryt, varObreb, varNumer, varArkusz)
-                    query2 = "update rejestr_emuia set ulica_ad_n = %s where rejon = %s AND numdzialki = %s AND arkusz= %s;"
-                    cur.execute(query2, dataUpdate2)
-                    con.commit()
 
-                    #numer porządkowy budynku
-                    querys3 = "select numerporza from punkty_adresowe_knurow_emuia where obreb = %s AND numer = %s AND arkusz= %s;"
-                    cur.execute(querys3, data)
-                    con.commit()
-                    nrPorza = cur.fetchone()[0]
+                #numer porządkowy budynku
+                dataUpdate3 = (nrPorza, varObreb, varNumer, varArkusz)
+                query3 = "update rejestr_emuia set numerporza = %s where rejon = %s AND numdzialki = %s AND arkusz= %s;"
+                cur.execute(query3, dataUpdate3)
+                con.commit()
 
-                    #numer porządkowy budynku
-                    dataUpdate3 = (nrPorza, varObreb, varNumer, varArkusz)
-                    query3 = "update rejestr_emuia set numerporza = %s where rejon = %s AND numdzialki = %s AND arkusz= %s;"
-                    cur.execute(query3, dataUpdate3)
-                    con.commit()
 
-                    #kod pocztowy
-                    querys4 = "select kodpocztow from punkty_adresowe_knurow_emuia where obreb = %s AND numer = %s AND arkusz= %s;"
-                    cur.execute(querys4, data)
-                    con.commit()
-                    kodPoczt = cur.fetchone()[0]
-
-                    #update pustych atrybutów dla wybranych wierszy
-                    #kod pocztowy
-                    dataUpdate4 = (kodPoczt, varObreb, varNumer, varArkusz)
-                    query4 = "update rejestr_emuia set kodpocztow = %s where rejon = %s AND numdzialki = %s AND arkusz= %s;"
-                    cur.execute(query4, dataUpdate4)
-                    con.commit()
+                #update pustych atrybutów dla wybranych wierszy
+                #kod pocztowy
+                dataUpdate4 = (kodPoczt, varObreb, varNumer, varArkusz)
+                query4 = "update rejestr_emuia set kodpocztow = %s where rejon = %s AND numdzialki = %s AND arkusz= %s;"
+                cur.execute(query4, dataUpdate4)
+                con.commit()
                     
-                    warstwa = self.iface.mapCanvas().currentLayer()
+                    
             
 
             
                     #request = QgsFeatureRequest().setFilterExpression( "\"OBREB\"='" + varObreb + "' OR \"NUMER\"='"+ varNumer + "'  OR \"ARKUSZ\"='"+ varArkusz + "'" )
-                    expr = QgsExpression( "\"rejon\"='" + varObreb + "' AND \"numdzialki\"='"+ varNumer + "'  AND \"arkusz\"='"+ varArkusz + "'" )
-                    it = warstwa.getFeatures( QgsFeatureRequest( expr ) )
-                    ids = [i.id() for i in it]
-                    warstwa.setSelectedFeatures( ids )
-                    self.idAtlas = int(ids[0])
-                    self.idAtlas = self.idAtlas - 1
-                else:
-                    self.iface.messageBar().pushMessage(u'Uwaga', u'Brak działki w o podanej lokalizacji. Proszę sprawdzić poprawnośc danych', level=QgsMessageBar.WARNING, duration=5)
+                    #expr = QgsExpression( "\"rejon\"='" + varObreb + "' AND \"numdzialki\"='"+ varNumer + "'  AND \"arkusz\"='"+ varArkusz + "'" )
+                    #it = warstwa.getFeatures( QgsFeatureRequest( expr ) )
+                    #ids = [i.id() for i in it]
+                    #warstwa.setSelectedFeatures( ids )
+                    #self.idAtlas = int(ids[0])
+                    #self.idAtlas = self.idAtlas - 1
+
                 
                 
 
@@ -294,14 +288,19 @@ class EMUiAdok:
                     con.rollback()
 
                 self.iface.messageBar().pushMessage(u'Błąd', u'Problem z połączeniem do bazy', level=QgsMessageBar.CRITICAL, duration=5)
-                sys.exit(1)
+                #sys.exit(1)
                 
                 
             finally:
                 
                 if con:
                     con.close()
-                    #self.iface.messageBar().pushMessage('Sukces', u'Dane zostały odszukane', level=QgsMessageBar.SUCCESS, duration=5)
+                    self.iface.messageBar().pushMessage('Sukces', u'Dane zostały odszukane', level=QgsMessageBar.SUCCESS, duration=5)
+                    activeLyr=None
+                    for lyr in QgsMapLayerRegistry.instance().mapLayers().values():
+                        if lyr.name() == "rejestr_emuia":
+                            activeLyr = lyr
+                            self.iface.setActiveLayer(activeLyr)
                 else:
                     self.iface.messageBar().pushMessage(u'Błąd', u'Dane nie zostały zapisane', level=QgsMessageBar.CRITICAL, duration=5)
         
@@ -315,18 +314,23 @@ class EMUiAdok:
             #self.iface.mapCanvas().refresh()
         
     def printZaswiadczenie(self):
+        activeLyr=None
+        for lyr in QgsMapLayerRegistry.instance().mapLayers().values():
+            if lyr.name() == "rejestr_emuia":
+                activeLyr = lyr
+                self.iface.setActiveLayer(activeLyr)
         alayer = self.iface.activeLayer()
         
         varObreb = unicode(self.dlg.obrebComboBox.currentText())
         varNumer = unicode(self.dlg.dzialkaLineEdit.text())
         varArkusz = unicode(self.dlg.arkuszLineEdit.text())
+        varNumPorza = unicode(self.dlg.numerBudynkuLineEdit.text())
         
-        expr = QgsExpression( "\"rejon\"='" + varObreb + "' AND \"numdzialki\"='"+ varNumer + "'  AND \"arkusz\"='"+ varArkusz + "'" )
-        it = alayer.getFeatures( QgsFeatureRequest( expr ) )
-        ids = [i.id() for i in it]
-        alayer.setSelectedFeatures( ids )
-        self.idAtlas = int(ids[0])
-        self.idAtlas = self.idAtlas - 1
+        expr = QgsExpression( "\"rejon\"='" + varObreb + "' AND \"numdzialki\"='"+ varNumer + "' AND \"arkusz\"='"+ varArkusz + "' AND \"numerporza\"='" + varNumPorza + "'" )
+        features = alayer.getFeatures( QgsFeatureRequest( expr ) ).next()
+
+        self.idAtlas = int(features.id()) - 1
+
         # Dodaje wszystkie warstwy do widoku mapy
         myMapRenderer = self.iface.mapCanvas().mapRenderer()
 
@@ -380,18 +384,22 @@ class EMUiAdok:
             self.iface.messageBar().pushMessage(u'Błąd', u'Generowanie Zaświadczenia nie powiodło sie', level=QgsMessageBar.CRITICAL, duration=5)
             
     def printZawiadomienieUstal(self):
+        activeLyr=None
+        for lyr in QgsMapLayerRegistry.instance().mapLayers().values():
+            if lyr.name() == "rejestr_emuia":
+                activeLyr = lyr
+                self.iface.setActiveLayer(activeLyr)
         alayer = self.iface.activeLayer()
         
         varObreb = unicode(self.dlg.obrebComboBox.currentText())
         varNumer = unicode(self.dlg.dzialkaLineEdit.text())
         varArkusz = unicode(self.dlg.arkuszLineEdit.text())
+        varNumPorza = unicode(self.dlg.numerBudynkuLineEdit.text())
         
-        expr = QgsExpression( "\"rejon\"='" + varObreb + "' AND \"numdzialki\"='"+ varNumer + "'  AND \"arkusz\"='"+ varArkusz + "'" )
-        it = alayer.getFeatures( QgsFeatureRequest( expr ) )
-        ids = [i.id() for i in it]
-        alayer.setSelectedFeatures( ids )
-        self.idAtlas = int(ids[0])
-        self.idAtlas = self.idAtlas - 1
+        expr = QgsExpression( "\"rejon\"='" + varObreb + "' AND \"numdzialki\"='"+ varNumer + "' AND \"arkusz\"='"+ varArkusz + "' AND \"numerporza\"='" + varNumPorza + "'" )
+        features = alayer.getFeatures( QgsFeatureRequest( expr ) ).next()
+
+        self.idAtlas = int(features.id()) - 1
         
         # Dodaje wszystkie warstwy do widoku mapy
         myMapRenderer = self.iface.mapCanvas().mapRenderer()
@@ -446,18 +454,22 @@ class EMUiAdok:
             self.iface.messageBar().pushMessage(u'Błąd', u'Generowanie zawiadomienia nie powiodło sie', level=QgsMessageBar.CRITICAL, duration=5)
             
     def printZawiadomienieZmiana(self):
+        activeLyr=None
+        for lyr in QgsMapLayerRegistry.instance().mapLayers().values():
+            if lyr.name() == "rejestr_emuia":
+                activeLyr = lyr
+                self.iface.setActiveLayer(activeLyr)
         alayer = self.iface.activeLayer()
         
         varObreb = unicode(self.dlg.obrebComboBox.currentText())
         varNumer = unicode(self.dlg.dzialkaLineEdit.text())
         varArkusz = unicode(self.dlg.arkuszLineEdit.text())
+        varNumPorza = unicode(self.dlg.numerBudynkuLineEdit.text())
         
-        expr = QgsExpression( "\"rejon\"='" + varObreb + "' AND \"numdzialki\"='"+ varNumer + "'  AND \"arkusz\"='"+ varArkusz + "'" )
-        it = alayer.getFeatures( QgsFeatureRequest( expr ) )
-        ids = [i.id() for i in it]
-        alayer.setSelectedFeatures( ids )
-        self.idAtlas = int(ids[0])
-        self.idAtlas = self.idAtlas - 1
+        expr = QgsExpression( "\"rejon\"='" + varObreb + "' AND \"numdzialki\"='"+ varNumer + "' AND \"arkusz\"='"+ varArkusz + "' AND \"numerporza\"='" + varNumPorza + "'" )
+        features = alayer.getFeatures( QgsFeatureRequest( expr ) ).next()
+
+        self.idAtlas = int(features.id()) - 1
         
         # Dodaje wszystkie warstwy do widoku mapy
         myMapRenderer = self.iface.mapCanvas().mapRenderer()
@@ -517,11 +529,7 @@ class EMUiAdok:
         # show the dialog
         self.dlg.show()
         
-        activeLyr=None
-        for lyr in QgsMapLayerRegistry.instance().mapLayers().values():
-            if lyr.name() == "rejestr_emuia":
-                activeLyr = lyr
-                self.iface.setActiveLayer(activeLyr)
+        
                 
         self.dlg.btnZaswiadczenie.clicked.connect(self.printZaswiadczenie)
         self.dlg.btnZawiadomienieUstal.clicked.connect(self.printZawiadomienieUstal)
@@ -531,13 +539,20 @@ class EMUiAdok:
         self.dlg.obrebComboBox.clear()
         self.dlg.dzialkaLineEdit.clear()
         self.dlg.arkuszLineEdit.clear()
+        self.dlg.numerBudynkuLineEdit.clear()
         
+        
+        activeLyr=None
+        for lyr in QgsMapLayerRegistry.instance().mapLayers().values():
+            if lyr.name() == "PunktyAdresowe":
+                activeLyr = lyr
+                self.iface.setActiveLayer(activeLyr)
         warstwa = self.iface.activeLayer()
         
         #filtr Obręby
-        obreb = warstwa.dataProvider().fieldNameIndex( 'rejon' ) 
-        atrObreb = warstwa.dataProvider().uniqueValues( obreb )
-        cbObreb = self.dlg.obrebComboBox.addItems( atrObreb )
+        self.dlg.obrebComboBox.addItem(u'Knurów')
+        self.dlg.obrebComboBox.addItem(u'Krywałd')
+        self.dlg.obrebComboBox.addItem(u'Szczygłowice')
         
         # Run the dialog event loop
         result = self.dlg.exec_()
