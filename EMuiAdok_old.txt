@@ -77,7 +77,7 @@ class EMUiAdok:
         self.toolbar = self.iface.addToolBar(u'EMUiAdok')
         self.toolbar.setObjectName(u'EMUiAdok')
         
-        #self.dlg.wybierzDokumentComboBox.addItem(u'ZaÅ›wiadczenie')
+        #self.dlg.wybierzDokumentComboBox.addItem(u'Zaœwiadczenie')
         #self.dlg.wybierzDokumentComboBox.addItem(u'Zawiadomienie o ustaleniu nr')
         #self.dlg.wybierzDokumentComboBox.addItem(u'Zawiadomienie o zmianie nr')
 
@@ -192,7 +192,7 @@ class EMUiAdok:
         del self.toolbar
         
     def szukaj(self):
-        # selekcja atrybutÃ³w na podstawie zaznaczonych wartoÅ›ci
+        # selekcja atrybutów na podstawie zaznaczonych wartoœci
         #self.iface.mapCanvas().setSelectionColor( QColor("yellow") )
         
         activeLyr=None
@@ -201,37 +201,114 @@ class EMUiAdok:
                 activeLyr = lyr
                 self.iface.setActiveLayer(activeLyr)
         
-        #wartoÅ›ci z coboBoxÃ³w do zmiennej
+        #wartoœci z coboBoxów do zmiennej
         varObreb = unicode(self.dlg.obrebComboBox.currentText())
         varNumer = unicode(self.dlg.dzialkaLineEdit.text())
         varArkusz = unicode(self.dlg.arkuszLineEdit.text())
         varNumPorza = unicode(self.dlg.numerBudynkuLineEdit.text())
         
         if varNumer == '':
-            self.iface.messageBar().pushMessage('Puste pole', u'ProszÄ™ wypeÅ‚niÄ‡ pole numeru dziaÅ‚ki', level=QgsMessageBar.CRITICAL, duration=10)
+            self.iface.messageBar().pushMessage('Puste pole', u'Proszê wype³niæ pole numeru dzia³ki', level=QgsMessageBar.CRITICAL, duration=10)
         elif varArkusz == '':
-            self.iface.messageBar().pushMessage('Puste pole', u'ProszÄ™ wypeÅ‚niÄ‡ pole Arkusza', level=QgsMessageBar.CRITICAL, duration=10)
+            self.iface.messageBar().pushMessage('Puste pole', u'Proszê wype³niæ pole Arkusza', level=QgsMessageBar.CRITICAL, duration=10)
         else:
         
             data1 = (varObreb, varNumer, varArkusz, varNumPorza)
             data = (varObreb, varNumer, varArkusz)
 
             warstwa = self.iface.activeLayer()
-            expr = QgsExpression( "\"rejon\"='" + varObreb + "' AND \"numdzialki\"='"+ varNumer + "' AND \"arkusz\"='"+ varArkusz + "' AND \"numerporza\"='" + varNumPorza + "'" )
-            features = warstwa.getFeatures( QgsFeatureRequest( expr ) )
-            f = features.next()
+            expr = QgsExpression( "\"OBREB\"='" + varObreb + "' AND \"NUMER\"='"+ varNumer + "' AND \"ARKUSZ\"='"+ varArkusz + "' AND \"NUMERPORZA\"='" + varNumPorza + "'" )
+            features = warstwa.getFeatures( QgsFeatureRequest( expr ) ).next()
             #selected = features.next()
 
             #selected = [s.id() for s in features]
-            #warstwa.setSelectedFeatures( features )
-            #self.iface.mapCanvas().zoomToSelected()
+            #warstwa.setSelectedFeatures( selected )
+            #iface.mapCanvas().zoomToSelected()
             
-            #ulicaPA = features.attributes()[13]
-            #ulicaPAteryt = features.attributes()[14]
-            #nrPorza = features.attributes()[15]
-            #kodPoczt = features.attributes()[16]
+            ulicaPA = features.attributes()[13]
+            ulicaPAteryt = features.attributes()[14]
+            nrPorza = features.attributes()[15]
+            kodPoczt = features.attributes()[16]
             
-            #zoom do wybranej dziaÅ‚ki
+            con = None
+
+            try:
+                 
+                con = psycopg2.connect(database='netgis_knurow', user='netgis_knurow', password='n4feqeTR', host='178.216.202.213')
+                cur = con.cursor()
+                
+                
+
+                #nazwa ulicy
+                dataUpdate1 = (ulicaPA, varObreb, varNumer, varArkusz)
+                query1 = "update rejestr_emuia set nazwaglown = %s where rejon = %s AND numdzialki = %s AND arkusz= %s;"
+                cur.execute(query1, dataUpdate1)
+                con.commit()
+
+
+                #idTERYT ulicy
+                dataUpdate2 = (ulicaPAteryt, varObreb, varNumer, varArkusz)
+                query2 = "update rejestr_emuia set ulica_ad_n = %s where rejon = %s AND numdzialki = %s AND arkusz= %s;"
+                cur.execute(query2, dataUpdate2)
+                con.commit()
+
+
+                #numer porz¹dkowy budynku
+                dataUpdate3 = (nrPorza, varObreb, varNumer, varArkusz)
+                query3 = "update rejestr_emuia set numerporza = %s where rejon = %s AND numdzialki = %s AND arkusz= %s;"
+                cur.execute(query3, dataUpdate3)
+                con.commit()
+
+
+                #update pustych atrybutów dla wybranych wierszy
+                #kod pocztowy
+                dataUpdate4 = (kodPoczt, varObreb, varNumer, varArkusz)
+                query4 = "update rejestr_emuia set kodpocztow = %s where rejon = %s AND numdzialki = %s AND arkusz= %s;"
+                cur.execute(query4, dataUpdate4)
+                con.commit()
+                    
+                    
+            
+
+            
+                    #request = QgsFeatureRequest().setFilterExpression( "\"OBREB\"='" + varObreb + "' OR \"NUMER\"='"+ varNumer + "'  OR \"ARKUSZ\"='"+ varArkusz + "'" )
+                    #expr = QgsExpression( "\"rejon\"='" + varObreb + "' AND \"numdzialki\"='"+ varNumer + "'  AND \"arkusz\"='"+ varArkusz + "'" )
+                    #it = warstwa.getFeatures( QgsFeatureRequest( expr ) )
+                    #ids = [i.id() for i in it]
+                    #warstwa.setSelectedFeatures( ids )
+                    #self.idAtlas = int(ids[0])
+                    #self.idAtlas = self.idAtlas - 1
+
+                
+                
+
+
+            except psycopg2.DatabaseError, e:
+                if con:
+                    con.rollback()
+
+                self.iface.messageBar().pushMessage(u'B³¹d', u'Problem z po³¹czeniem do bazy', level=QgsMessageBar.CRITICAL, duration=5)
+                #sys.exit(1)
+                
+                
+            finally:
+                
+                if con:
+                    con.close()
+                    self.iface.messageBar().pushMessage('Sukces', u'Dane zosta³y odszukane', level=QgsMessageBar.SUCCESS, duration=5)
+                    activeLyr=None
+                    for lyr in QgsMapLayerRegistry.instance().mapLayers().values():
+                        if lyr.name() == "rejestr_emuia":
+                            activeLyr = lyr
+                            self.iface.setActiveLayer(activeLyr)
+                else:
+                    self.iface.messageBar().pushMessage(u'B³¹d', u'Dane nie zosta³y zapisane', level=QgsMessageBar.CRITICAL, duration=5)
+        
+        
+
+            
+            
+            #zoom do wybranej dzia³ki
             #box = warstwa.boundingBoxOfSelected()
             #self.iface.mapCanvas().setExtent(box)
             #self.iface.mapCanvas().refresh()
@@ -252,12 +329,12 @@ class EMUiAdok:
         expr = QgsExpression( "\"rejon\"='" + varObreb + "' AND \"numdzialki\"='"+ varNumer + "' AND \"arkusz\"='"+ varArkusz + "' AND \"numerporza\"='" + varNumPorza + "'" )
         features = alayer.getFeatures( QgsFeatureRequest( expr ) ).next()
 
-        self.idAtlas = int(features.id())
+        self.idAtlas = int(features.id()) - 1
 
         # Dodaje wszystkie warstwy do widoku mapy
         myMapRenderer = self.iface.mapCanvas().mapRenderer()
 
-        # Å‚aduje szablon druku
+        # ³aduje szablon druku
         myComposition = QgsComposition(myMapRenderer)
         username = getpass.getuser()
         username = str(username)
@@ -276,11 +353,11 @@ class EMUiAdok:
         myDocument.setContent(myTemplateContent)
         myComposition.loadFromTemplate(myDocument)
 
-        # pobierz kompozycjÄ™ mapy i zdefinuj skalÄ™
+        # pobierz kompozycjê mapy i zdefinuj skalê
         myAtlasMap = myComposition.getComposerMapById(0)
         
         # Konfiguracja Atlas
-        myAtlas = myComposition.atlasComposition()#ustawia warstwÄ™ w atlasie
+        myAtlas = myComposition.atlasComposition()#ustawia warstwê w atlasie
         
         myAtlas.setEnabled(True)
         myAtlas.setCoverageLayer(alayer)
@@ -302,9 +379,9 @@ class EMUiAdok:
         try:
             myComposition.exportAsPDF(output_pdf)
             myAtlas.endRender()
-            self.iface.messageBar().pushMessage('Sukces', u'ZaÅ›wiadczenie zostaÅ‚o wygenerowane pomyÅ›lnie', level=QgsMessageBar.SUCCESS, duration=5)
+            self.iface.messageBar().pushMessage('Sukces', u'Zaœwiadczenie zosta³o wygenerowane pomyœlnie', level=QgsMessageBar.SUCCESS, duration=5)
         except:
-            self.iface.messageBar().pushMessage(u'BÅ‚Ä…d', u'Generowanie ZaÅ›wiadczenia nie powiodÅ‚o sie', level=QgsMessageBar.CRITICAL, duration=5)
+            self.iface.messageBar().pushMessage(u'B³¹d', u'Generowanie Zaœwiadczenia nie powiod³o sie', level=QgsMessageBar.CRITICAL, duration=5)
             
     def printZawiadomienieUstal(self):
         activeLyr=None
@@ -322,12 +399,12 @@ class EMUiAdok:
         expr = QgsExpression( "\"rejon\"='" + varObreb + "' AND \"numdzialki\"='"+ varNumer + "' AND \"arkusz\"='"+ varArkusz + "' AND \"numerporza\"='" + varNumPorza + "'" )
         features = alayer.getFeatures( QgsFeatureRequest( expr ) ).next()
 
-        self.idAtlas = int(features.id())
+        self.idAtlas = int(features.id()) - 1
         
         # Dodaje wszystkie warstwy do widoku mapy
         myMapRenderer = self.iface.mapCanvas().mapRenderer()
 
-        # Å‚aduje szablon druku
+        # ³aduje szablon druku
         myComposition = QgsComposition(myMapRenderer)
         username = getpass.getuser()
         username = str(username)
@@ -346,11 +423,11 @@ class EMUiAdok:
         myDocument.setContent(myTemplateContent)
         myComposition.loadFromTemplate(myDocument)
 
-        # pobierz kompozycjÄ™ mapy i zdefinuj skalÄ™
+        # pobierz kompozycjê mapy i zdefinuj skalê
         myAtlasMap = myComposition.getComposerMapById(0)
         
         # Konfiguracja Atlas
-        myAtlas = myComposition.atlasComposition()#ustawia warstwÄ™ w atlasie
+        myAtlas = myComposition.atlasComposition()#ustawia warstwê w atlasie
         
         myAtlas.setEnabled(True)
         myAtlas.setCoverageLayer(alayer)
@@ -372,9 +449,9 @@ class EMUiAdok:
         try:
             myComposition.exportAsPDF(output_pdf)
             myAtlas.endRender()
-            self.iface.messageBar().pushMessage('Sukces', u'Zawiadomienie o ustaleniu numeru zostaÅ‚o wygenerowane pomyÅ›lnie', level=QgsMessageBar.SUCCESS, duration=5)
+            self.iface.messageBar().pushMessage('Sukces', u'Zawiadomienie o ustaleniu numeru zosta³o wygenerowane pomyœlnie', level=QgsMessageBar.SUCCESS, duration=5)
         except:
-            self.iface.messageBar().pushMessage(u'BÅ‚Ä…d', u'Generowanie zawiadomienia nie powiodÅ‚o sie', level=QgsMessageBar.CRITICAL, duration=5)
+            self.iface.messageBar().pushMessage(u'B³¹d', u'Generowanie zawiadomienia nie powiod³o sie', level=QgsMessageBar.CRITICAL, duration=5)
             
     def printZawiadomienieZmiana(self):
         activeLyr=None
@@ -392,12 +469,12 @@ class EMUiAdok:
         expr = QgsExpression( "\"rejon\"='" + varObreb + "' AND \"numdzialki\"='"+ varNumer + "' AND \"arkusz\"='"+ varArkusz + "' AND \"numerporza\"='" + varNumPorza + "'" )
         features = alayer.getFeatures( QgsFeatureRequest( expr ) ).next()
 
-        self.idAtlas = int(features.id())
+        self.idAtlas = int(features.id()) - 1
         
         # Dodaje wszystkie warstwy do widoku mapy
         myMapRenderer = self.iface.mapCanvas().mapRenderer()
 
-        # Å‚aduje szablon druku
+        # ³aduje szablon druku
         myComposition = QgsComposition(myMapRenderer)
         username = getpass.getuser()
         username = str(username)
@@ -416,11 +493,11 @@ class EMUiAdok:
         myDocument.setContent(myTemplateContent)
         myComposition.loadFromTemplate(myDocument)
 
-        # pobierz kompozycjÄ™ mapy i zdefinuj skalÄ™
+        # pobierz kompozycjê mapy i zdefinuj skalê
         myAtlasMap = myComposition.getComposerMapById(0)
         
         # Konfiguracja Atlas
-        myAtlas = myComposition.atlasComposition()#ustawia warstwÄ™ w atlasie
+        myAtlas = myComposition.atlasComposition()#ustawia warstwê w atlasie
         
         myAtlas.setEnabled(True)
         myAtlas.setCoverageLayer(alayer)
@@ -442,9 +519,9 @@ class EMUiAdok:
         try:
             myComposition.exportAsPDF(output_pdf)
             myAtlas.endRender()
-            self.iface.messageBar().pushMessage('Sukces', u'Zawiadomienie o zmianie numeru zostaÅ‚o wygenerowane pomyÅ›lnie', level=QgsMessageBar.SUCCESS, duration=5)
+            self.iface.messageBar().pushMessage('Sukces', u'Zawiadomienie o zmianie numeru zosta³o wygenerowane pomyœlnie', level=QgsMessageBar.SUCCESS, duration=5)
         except:
-            self.iface.messageBar().pushMessage(u'BÅ‚Ä…d', u'Generowanie zawiadomienia nie powiodÅ‚o sie', level=QgsMessageBar.CRITICAL, duration=5)
+            self.iface.messageBar().pushMessage(u'B³¹d', u'Generowanie zawiadomienia nie powiod³o sie', level=QgsMessageBar.CRITICAL, duration=5)
 
 
     def run(self):
@@ -472,10 +549,10 @@ class EMUiAdok:
                 self.iface.setActiveLayer(activeLyr)
         warstwa = self.iface.activeLayer()
         
-        #filtr ObrÄ™by
-        self.dlg.obrebComboBox.addItem(u'KnurÃ³w')
-        self.dlg.obrebComboBox.addItem(u'KrywaÅ‚d')
-        self.dlg.obrebComboBox.addItem(u'SzczygÅ‚owice')
+        #filtr Obrêby
+        self.dlg.obrebComboBox.addItem(u'Knurów')
+        self.dlg.obrebComboBox.addItem(u'Krywa³d')
+        self.dlg.obrebComboBox.addItem(u'Szczyg³owice')
         
         # Run the dialog event loop
         result = self.dlg.exec_()
